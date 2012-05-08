@@ -79,6 +79,7 @@ module Distribution.Simple.Utils (
         installExecutableFile,
         installOrdinaryFiles,
         installDirectoryContents,
+        installJavaScriptFiles,
 
         -- * File permissions
         setFileOrdinary,
@@ -150,7 +151,7 @@ import Data.Bits
 
 import System.Directory
     ( getDirectoryContents, doesDirectoryExist, doesFileExist, removeFile
-    , findExecutable )
+    , findExecutable, getModificationTime )
 import System.Environment
     ( getProgName )
 import System.Cmd
@@ -159,7 +160,7 @@ import System.Exit
     ( exitWith, ExitCode(..) )
 import System.FilePath
     ( normalise, (</>), (<.>), takeDirectory, splitFileName
-    , splitExtension, splitExtensions, splitDirectories )
+    , splitExtension, splitExtensions, takeExtension, splitDirectories )
 import System.Directory
     ( createDirectory, renameFile, removeDirectoryRecursive )
 import System.IO
@@ -646,7 +647,16 @@ findModuleFile searchPath extensions moduleName =
 -- the source directory structure changes before the list is used.
 --
 getDirectoryContentsRecursive :: FilePath -> IO [FilePath]
-getDirectoryContentsRecursive topdir = recurseDirectories [""]
+getDirectoryContentsRecursive = getDirectoryContentsRecursiveFiltered (const True)
+
+-- | List all the files in a directory and all subdirectories.
+--
+-- Much like getDirectoryContentsRecursive but allows you to exclude
+-- filter the paths.  If a directory is not included then its
+-- contents will not be encluded either.
+--
+getDirectoryContentsRecursiveFiltered :: (FilePath -> Bool) -> FilePath -> IO [FilePath]
+getDirectoryContentsRecursiveFiltered filterPred topdir = recurseDirectories [""]
   where
     recurseDirectories :: [FilePath] -> IO [FilePath]
     recurseDirectories []         = return []
@@ -657,18 +667,17 @@ getDirectoryContentsRecursive topdir = recurseDirectories [""]
 
       where
         collect files dirs' []              = return (reverse files, reverse dirs')
-        collect files dirs' (entry:entries) | ignore entry
-                                            = collect files dirs' entries
-        collect files dirs' (entry:entries) = do
+        collect files dirs' (entry:entries) | include entry = do
           let dirEntry = dir </> entry
           isDirectory <- doesDirectoryExist (topdir </> dirEntry)
           if isDirectory
             then collect files (dirEntry:dirs') entries
             else collect (dirEntry:files) dirs' entries
+        collect files dirs' (_:entries) = collect files dirs' entries
 
-        ignore ['.']      = True
-        ignore ['.', '.'] = True
-        ignore _          = False
+        include "."  = False
+        include ".." = False
+        include f    = filterPred f
 
 ----------------
 -- File globbing
@@ -847,6 +856,27 @@ installDirectoryContents verbosity srcDir destDir = do
   info verbosity ("copy directory '" ++ srcDir ++ "' to '" ++ destDir ++ "'.")
   srcFiles <- getDirectoryContentsRecursive srcDir
   installOrdinaryFiles verbosity destDir [ (srcDir, f) | f <- srcFiles ]
+
+-- | This installs all the java script (.js) files in a directory to a target loction
+-- preserving the directory layout.  Any files in ".jsexe" directories are ignored
+-- as those sube directoies are likely to be the destination.
+--
+-- Only files with newer modification times are copied.
+--
+installJavaScriptFiles :: Verbosity -> FilePath -> FilePath -> IO ()
+installJavaScriptFiles vebosity srcDir destDir = do
+    info vebosity $ "Copying Java Script From" ++ srcDir
+    srcFiles <- getDirectoryContentsRecursiveFiltered ((/= ".jsexe") . takeExtension) srcDir
+      >>= filterM modTimeDiffers
+    installOrdinaryFiles vebosity destDir [ (srcDir, f) | f <- srcFiles, takeExtension f == ".js" ]
+  where
+    modTimeDiffers f = do
+            srcTime  <- getModificationTime $ srcDir </> f
+            destTime <- getModificationTime $ destDir </> f
+            return $ destTime < srcTime
+        `catchIO` \e -> if isDoesNotExistError e
+                            then return True
+                            else ioError e
 
 ---------------------------------
 -- Deprecated file copy functions

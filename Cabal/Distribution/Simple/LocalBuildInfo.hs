@@ -138,6 +138,7 @@ data LocalBuildInfo = LocalBuildInfo {
         withGHCiLib   :: Bool,  -- ^Whether to build libs suitable for use with GHCi.
         splitObjs     :: Bool,  -- ^Use -split-objs with GHC, if available
         stripExes     :: Bool,  -- ^Whether to strip executables during install
+        withJavaScript:: Bool,  -- ^Whether to build JavaScript files.
         progPrefix    :: PathTemplate, -- ^Prefix to be prepended to installed executables
         progSuffix    :: PathTemplate -- ^Suffix to be appended to installed executables
   } deriving (Read, Show)

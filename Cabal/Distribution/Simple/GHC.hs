@@ -1025,6 +1025,10 @@ installExe verbosity lbi installDirs buildPref (progprefix, progsuffix) _pkg exe
             (dest <.> exeExtension)
           stripExe verbosity lbi exeFileName (dest <.> exeExtension)
   installBinary (binDir </> fixedExeBaseName)
+  when (withJavaScript lbi) $ installJavaScriptFiles
+        verbosity
+        (buildPref </> exeName exe </> exeName exe <.> "jsexe")
+        (binDir </> fixedExeBaseName <.> "jsexe")
 
 stripExe :: Verbosity -> LocalBuildInfo -> FilePath -> FilePath -> IO ()
 stripExe verbosity lbi name path = when (stripExes lbi) $
@@ -1062,9 +1066,10 @@ installLib verbosity lbi targetDir dynlibTargetDir builtDir pkg lib = do
       copyModuleFiles ext =
         findModuleFiles [builtDir] [ext] (libModules lib)
           >>= installOrdinaryFiles verbosity targetDir
-  ifVanilla $ copyModuleFiles "hi"
-  ifProf    $ copyModuleFiles "p_hi"
-  ifShared  $ copyModuleFiles "dyn_hi"
+  ifVanilla    $ copyModuleFiles "hi"
+  ifProf       $ copyModuleFiles "p_hi"
+  ifShared     $ copyModuleFiles "dyn_hi"
+  ifJavaScript $ copyModuleFiles "js"
 
   -- copy the built library files over:
   ifVanilla $ copy builtDir targetDir vanillaLibName
@@ -1079,19 +1084,20 @@ installLib verbosity lbi targetDir dynlibTargetDir builtDir pkg lib = do
                                (targetDir </> profileLibName)
 
   where
-    vanillaLibName = mkLibName pkgid
-    profileLibName = mkProfLibName pkgid
-    ghciLibName    = mkGHCiLibName pkgid
-    sharedLibName  = mkSharedLibName pkgid (compilerId (compiler lbi))
+    vanillaLibName  = mkLibName pkgid
+    profileLibName  = mkProfLibName pkgid
+    ghciLibName     = mkGHCiLibName pkgid
+    sharedLibName   = mkSharedLibName pkgid (compilerId (compiler lbi))
 
-    pkgid          = packageId pkg
+    pkgid           = packageId pkg
 
-    hasLib    = not $ null (libModules lib)
-                   && null (cSources (libBuildInfo lib))
-    ifVanilla = when (hasLib && withVanillaLib lbi)
-    ifProf    = when (hasLib && withProfLib    lbi)
-    ifGHCi    = when (hasLib && withGHCiLib    lbi)
-    ifShared  = when (hasLib && withSharedLib  lbi)
+    hasLib          = not $ null (libModules lib)
+                         && null (cSources (libBuildInfo lib))
+    ifVanilla       = when (hasLib && withVanillaLib lbi)
+    ifProf          = when (hasLib && withProfLib    lbi)
+    ifGHCi          = when (hasLib && withGHCiLib    lbi)
+    ifShared        = when (hasLib && withSharedLib  lbi)
+    ifJavaScript    = when (hasLib && withJavaScript lbi)
 
 -- | On MacOS X we have to call @ranlib@ to regenerate the archive index after
 -- copying. This is because the silly MacOS X linker checks that the archive
