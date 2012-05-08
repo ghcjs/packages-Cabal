@@ -289,6 +289,7 @@ data ConfigFlags = ConfigFlags {
     configGHCiLib   :: Flag Bool,      -- ^Enable compiling library for GHCi
     configSplitObjs :: Flag Bool,      -- ^Enable -split-objs with GHC
     configStripExes :: Flag Bool,      -- ^Enable executable stripping
+    configJavaScript :: Flag Bool,     -- ^Enable creation of JavaScript
     configConstraints :: [Dependency], -- ^Additional constraints for
                                        -- dependencies
     configConfigurationsFlags :: FlagAssignment,
@@ -316,6 +317,7 @@ defaultConfigFlags progConf = emptyConfigFlags {
     configGHCiLib      = Flag True,
     configSplitObjs    = Flag False, -- takes longer, so turn off by default
     configStripExes    = Flag True,
+    configJavaScript   = Flag True,
     configTests  = Flag False,
     configBenchmarks   = Flag False,
     configLibCoverage = Flag False
@@ -433,6 +435,11 @@ configureOptions showOrParseArgs =
       ,option "" ["executable-stripping"]
          "strip executables upon installation to reduce binary sizes"
          configStripExes (\v flags -> flags { configStripExes = v })
+         (boolOpt [] [])
+
+      ,option "" ["java-script"]
+         "Java Script"
+         configJavaScript (\v flags -> flags { configJavaScript = v })
          (boolOpt [] [])
 
       ,option "" ["configure-option"]
@@ -589,6 +596,7 @@ instance Monoid ConfigFlags where
     configGHCiLib       = mempty,
     configSplitObjs     = mempty,
     configStripExes     = mempty,
+    configJavaScript    = mempty,
     configExtraLibDirs  = mempty,
     configConstraints   = mempty,
     configExtraIncludeDirs    = mempty,
@@ -622,6 +630,7 @@ instance Monoid ConfigFlags where
     configGHCiLib       = combine configGHCiLib,
     configSplitObjs     = combine configSplitObjs,
     configStripExes     = combine configStripExes,
+    configJavaScript    = combine configJavaScript,
     configExtraLibDirs  = combine configExtraLibDirs,
     configConstraints   = combine configConstraints,
     configExtraIncludeDirs    = combine configExtraIncludeDirs,
