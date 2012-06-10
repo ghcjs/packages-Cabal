@@ -1030,7 +1030,8 @@ installLib verbosity lbi targetDir dynlibTargetDir builtDir pkg lib = do
   ifVanilla    $ copyModuleFiles "hi"
   ifProf       $ copyModuleFiles "p_hi"
   ifShared     $ copyModuleFiles "dyn_hi"
-  ifJavaScript $ copyModuleFiles "js"
+  ifJavaScript $ copyModuleFiles "plain.js"
+  ifJavaScript $ copyModuleFiles "trampoline.js"
 
   -- copy the built library files over:
   ifVanilla $ copy builtDir targetDir vanillaLibName
