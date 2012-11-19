@@ -1028,7 +1028,7 @@ installExe verbosity lbi installDirs buildPref (progprefix, progsuffix) _pkg exe
   when (withJavaScript lbi) $ do
     installJavaScriptFiles
         verbosity
-        (buildPref </> exeName exe </> exeName exe <.> "trompoline.jsexe")
+        (buildPref </> exeName exe </> exeName exe <.> "trampoline.jsexe")
         (binDir </> fixedExeBaseName <.> "trampoline.jsexe")
     installJavaScriptFiles
         verbosity
