@@ -1030,10 +1030,10 @@ installExe verbosity lbi installDirs buildPref (progprefix, progsuffix) _pkg exe
         verbosity
         (buildPref </> exeName exe </> exeName exe <.> "trampoline.jsexe")
         (binDir </> fixedExeBaseName <.> "trampoline.jsexe")
-    installJavaScriptFiles
-        verbosity
-        (buildPref </> exeName exe </> exeName exe <.> "gen2.jsexe")
-        (binDir </> fixedExeBaseName <.> "gen2.jsexe")
+--    installJavaScriptFiles
+--        verbosity
+--        (buildPref </> exeName exe </> exeName exe <.> "gen2.jsexe")
+--        (binDir </> fixedExeBaseName <.> "gen2.jsexe")
 
 stripExe :: Verbosity -> LocalBuildInfo -> FilePath -> FilePath -> IO ()
 stripExe verbosity lbi name path = when (stripExes lbi) $
@@ -1075,8 +1075,8 @@ installLib verbosity lbi targetDir dynlibTargetDir builtDir pkg lib = do
   ifProf       $ copyModuleFiles "p_hi"
   ifShared     $ copyModuleFiles "dyn_hi"
   ifJavaScript $ copyModuleFiles "trampoline.js"
-  ifJavaScript $ copyModuleFiles "gen2.js"
-  ifJavaScript $ copyModuleFiles "gen2.ji"
+--  ifJavaScript $ copyModuleFiles "gen2.js"
+--  ifJavaScript $ copyModuleFiles "gen2.ji"
 
   -- copy the built library files over:
   ifVanilla $ copy builtDir targetDir vanillaLibName
